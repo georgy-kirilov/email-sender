@@ -9,7 +9,8 @@ var emailSection = builder.Configuration.GetSection(EmailOptions.Section);
 
 builder.Services
     .Configure<EmailOptions>(emailSection)
-    .AddScoped<IEmailService, MailKitEmailService>();
+    .AddScoped<MailKitEmailService>()
+    .AddScoped<SystemNetMailEmailService>();
 
 var app = builder.Build();
 

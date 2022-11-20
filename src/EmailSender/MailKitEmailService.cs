@@ -2,22 +2,23 @@
 
 using MailKit.Net.Smtp;
 using MailKit.Security;
+
 using MimeKit;
 
 namespace EmailSender;
 
-public sealed class MailKitEmailService : IEmailService
+public sealed class MailKitEmailService
 {
     private readonly EmailOptions _emailOptions;
 
-    public MailKitEmailService(IOptions<EmailOptions> emailOptions)
+    public MailKitEmailService(IOptions<EmailOptions> options)
     {
-        _emailOptions = emailOptions.Value;
+        _emailOptions = options.Value;
     }
 
     public async Task SendEmail(SendEmailInputModel input)
     {
-        var email = CreateEmail(input);
+        var email = await CreateEmail(input);
 
         using var smtp = new SmtpClient();
 
@@ -30,7 +31,7 @@ public sealed class MailKitEmailService : IEmailService
         await smtp.DisconnectAsync(true);
     }
 
-    private MimeMessage CreateEmail(SendEmailInputModel input)
+    private async Task<MimeMessage> CreateEmail(SendEmailInputModel input)
     {
         var email = new MimeMessage
         {
@@ -42,7 +43,7 @@ public sealed class MailKitEmailService : IEmailService
 
         var builder = new BodyBuilder();
 
-        AddAttachmentsTo(builder, input.Attachments);
+        await AddAttachmentsTo(builder, input.Attachments);
 
         builder.HtmlBody = input.Body;
 
@@ -51,7 +52,7 @@ public sealed class MailKitEmailService : IEmailService
         return email;
     }
 
-    private static void AddAttachmentsTo(BodyBuilder builder, IEnumerable<IFormFile> attachments)
+    private static async Task AddAttachmentsTo(BodyBuilder builder, IEnumerable<IFormFile>? attachments)
     {
         if (attachments is null || !attachments.Any())
         {
@@ -69,7 +70,7 @@ public sealed class MailKitEmailService : IEmailService
 
             using var stream = new MemoryStream();
 
-            attachment.CopyTo(stream);
+            await attachment.CopyToAsync(stream);
 
             fileBytes = stream.ToArray();
 
